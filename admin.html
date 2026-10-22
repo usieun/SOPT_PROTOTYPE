@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>냉장고 노트 실험 기록</title>
+<style>
+/* Layout: 한 열 대시보드 · 판단 기준 → 기능별 반응 표 → 참여자 표 → 참여자 상세(오른쪽 패널) */
+:root{
+  --bg:#ffffff; --bg2:#f2f4f6; --bg3:#e9ecf0; --line:#e5e8eb;
+  --fg:#191f28; --fg2:#4e5968; --fg3:#8b95a1; --fg4:#b0b8c1;
+  --accent:#3182f6; --accent-press:#1b64da; --accent-weak:#e8f3ff;
+  --danger:#f04452; --danger-weak:#ffeef0; --warn:#f57800; --warn-weak:#fff3e6;
+  --ok:#03b26c; --ok-weak:#e5f8ef; --page:#f7f8fa; --dim:rgba(0,12,30,.4);
+  --font:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1c1c22; --bg2:#26262e; --bg3:#30303a; --line:#30303a;
+  --fg:#f2f3f5; --fg2:#c3c8d0; --fg3:#8d94a0; --fg4:#5d6470;
+  --accent:#4d94ff; --accent-press:#3a7ee8; --accent-weak:#1c2b45;
+  --danger:#ff5c6a; --danger-weak:#3a1f25; --warn:#ff9a33; --warn-weak:#3a2a1a;
+  --ok:#2fcb87; --ok-weak:#163327; --page:#131317; --dim:rgba(0,0,0,.6); color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#1c1c22; --bg2:#26262e; --bg3:#30303a; --line:#30303a;
+  --fg:#f2f3f5; --fg2:#c3c8d0; --fg3:#8d94a0; --fg4:#5d6470;
+  --accent:#4d94ff; --accent-press:#3a7ee8; --accent-weak:#1c2b45;
+  --danger:#ff5c6a; --danger-weak:#3a1f25; --warn:#ff9a33; --warn-weak:#3a2a1a;
+  --ok:#2fcb87; --ok-weak:#163327; --page:#131317; --dim:rgba(0,0,0,.6); color-scheme:dark }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--page);color:var(--fg);font-family:var(--font);font-size:14px;letter-spacing:-.01em;-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+[hidden]{display:none!important}
+.wrap{max-width:1180px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
+h1{font-size:24px;font-weight:800;margin:0;text-wrap:balance}
+h2{font-size:17px;font-weight:700;margin:0}
+.cap{font-size:12px;color:var(--fg3)}
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.head .sub{color:var(--fg3);margin-top:6px;font-size:13px;line-height:1.6;max-width:720px}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{height:38px;padding:0 14px;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;font-size:14px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:active{background:var(--accent-press)}
+.btn.ghost{background:var(--bg);color:var(--fg2);box-shadow:inset 0 0 0 1px var(--line)}
+.btn.danger{background:var(--danger-weak);color:var(--danger)}
+.btn:disabled{opacity:.5;cursor:default}
+.panel{background:var(--bg);border-radius:18px;padding:18px 20px;border:1px solid var(--line)}
+.conn{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.conn input{height:38px;border-radius:10px;border:0;background:var(--bg2);padding:0 12px;min-width:0;flex:1 1 200px;outline:none}
+.conn input:focus{box-shadow:inset 0 0 0 2px var(--accent)}
+.status{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--fg2)}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--fg4)}
+.status.ok i{background:var(--ok)}.status.err i{background:var(--danger)}.status.local i{background:var(--warn)}
+.msg{font-size:13px;color:var(--danger);margin:8px 0 0}
+section{display:flex;flex-direction:column;gap:12px}
+
+.crit{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.ci{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.ci .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.ci .t{font-size:14px;font-weight:700;line-height:1.45}
+.ci .big{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.ci .big small{font-size:13px;color:var(--fg3);font-weight:600;margin-left:4px}
+.ci .rule{font-size:12px;color:var(--fg3);line-height:1.55}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.trio div{background:var(--bg2);border-radius:10px;padding:8px 10px;min-width:0}
+.trio b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.trio span{font-size:12px;color:var(--fg3)}
+.trio em{display:block;font-style:normal;font-size:11px;color:var(--fg3);margin-top:2px;line-height:1.4;overflow-wrap:anywhere}
+.bar{height:6px;border-radius:3px;background:var(--bg2);position:relative;overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;border-radius:3px;background:var(--accent)}
+.bar b{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--fg)}
+.pill{display:inline-flex;align-items:center;min-height:22px;padding:1px 8px;border-radius:6px;font-size:12px;font-weight:700;white-space:nowrap}
+.pill.ok{background:var(--ok-weak);color:var(--ok)}
+.pill.no{background:var(--danger-weak);color:var(--danger)}
+.pill.wait{background:var(--warn-weak);color:var(--warn)}
+.pill.grey{background:var(--bg2);color:var(--fg3)}
+.pill.blue{background:var(--accent-weak);color:var(--accent)}
+.pill.dark{background:var(--fg);color:var(--bg)}
+
+.tbl-wrap{overflow-x:auto;border-radius:16px;border:1px solid var(--line);background:var(--bg)}
+table{border-collapse:collapse;width:100%}
+table.wide{min-width:980px}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.5}
+th{font-size:12px;color:var(--fg3);font-weight:700;background:var(--bg)}
+tbody tr:last-child td{border-bottom:0}
+#rows tr{cursor:pointer}
+#rows tr:hover td{background:var(--bg2)}
+td .nm{font-weight:700}
+td .sm{font-size:12px;color:var(--fg3)}
+.num{font-variant-numeric:tabular-nums}
+.empty{padding:40px 20px;text-align:center;color:var(--fg3);line-height:1.7}
+.reh td{opacity:.55}
+
+.dim{position:fixed;inset:0;background:var(--dim);z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(600px,100%);background:var(--bg);z-index:21;display:flex;flex-direction:column;box-shadow:-12px 0 40px rgba(0,0,0,.15)}
+.drawer .dh{display:flex;align-items:flex-start;gap:12px;padding:20px 20px 14px;padding-top:max(20px,env(safe-area-inset-top,0px));border-bottom:1px solid var(--line)}
+.drawer .db{overflow-y:auto;padding:18px 20px;padding-bottom:max(28px,env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:24px}
+.x{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:var(--fg2);flex-shrink:0}
+.x:hover{background:var(--bg2)}
+.kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.kv div{background:var(--bg2);border-radius:12px;padding:10px 12px;min-width:0}
+.kv b{display:block;font-size:14px;margin-top:2px;overflow-wrap:anywhere;line-height:1.45}
+.tsec{border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.tsec .th{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.q{display:flex;flex-direction:column;gap:8px}
+.q label,.q .ql{font-size:13px;font-weight:700;color:var(--fg2)}
+.q .hint{font-size:12px;color:var(--fg3);font-weight:500}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opts button{min-height:34px;padding:0 12px;border-radius:17px;background:var(--bg2);color:var(--fg2);font-weight:600;font-size:13px}
+.opts button.on{background:var(--accent);color:#fff}
+.q textarea,.q input[type=text]{border:0;border-radius:12px;background:var(--bg2);padding:10px 12px;outline:none;resize:vertical;min-height:44px;width:100%}
+.q textarea:focus,.q input[type=text]:focus{box-shadow:inset 0 0 0 2px var(--accent)}
+.tl{display:flex;flex-direction:column}
+.tl div{display:flex;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13px;align-items:baseline}
+.tl div:last-child{border-bottom:0}
+.tl span{width:42px;flex-shrink:0;color:var(--fg3);font-variant-numeric:tabular-nums}
+.tl i{font-style:normal;font-size:11px;font-weight:800;width:16px;flex-shrink:0;color:var(--accent)}
+.tl em{font-style:normal;color:var(--fg3)}
+.save-row{display:flex;gap:8px;align-items:center;position:sticky;bottom:-18px;background:var(--bg);padding-block:10px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#2b303b;color:#fff;padding:12px 16px;border-radius:12px;font-weight:600;z-index:40;font-size:14px}
+@media (max-width:560px){ .kv{grid-template-columns:1fr} h1{font-size:21px} .trio{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div><h1>냉장고 노트 실험 기록</h1>
+      <p class="sub">A 대체 재료 · B 식비 절약 · C 컨디션·기력 중 어떤 가치 제안이 실제 행동으로 이어지는지 따로 확인해요. 화면 행동은 자동으로 쌓이고, 말로 확인한 부분은 참여자를 눌러 메모로 남겨요.</p></div>
+    <div class="tools">
+      <button type="button" class="btn ghost" id="reload">새로고침</button>
+      <button type="button" class="btn ghost" id="csv">CSV 내려받기</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="conn">
+      <span class="status" id="status"><i></i><span>연결 확인 중</span></span>
+      <input type="password" id="key" placeholder="관리자 비밀번호 (Code.gs의 ADMIN_KEY)" autocomplete="off" aria-label="관리자 비밀번호">
+      <button type="button" class="btn" id="connect">불러오기</button>
+      <span class="cap" id="ga-state"></span>
+    </div>
+    <p class="msg" id="msg" hidden></p>
+  </div>
+
+  <section>
+    <div class="head" style="align-items:baseline"><h2>판단 기준</h2><span class="cap" id="n-label"></span></div>
+    <div class="crit" id="crit"></div>
+    <p class="cap" style="margin:0;line-height:1.6">5명 기준으로 판정해요. ‘리허설·역할 연습’으로 표시한 기록은 계산에서 빠져요. 칭찬했더라도 기능을 쓰지 않았거나 입력 부담으로 건너뛰었다면 핵심 기능으로 넣기 전에 흐름을 다시 검토해요.</p>
+  </section>
+
+  <section>
+    <div class="head" style="align-items:baseline"><h2>기능별 반응</h2><span class="cap">실험 계획 3번 표와 같은 형식이에요</span></div>
+    <div class="tbl-wrap"><table class="wide"><thead><tr><th style="width:150px">기능</th><th style="width:130px">과제 완료 인원</th><th style="width:260px">입력·설정 중단</th><th>선택 이유</th></tr></thead><tbody id="fn-rows"></tbody></table></div>
+  </section>
+
+  <section>
+    <div class="head" style="align-items:baseline"><h2>참여자별 기록</h2><span class="cap">행을 누르면 자세한 기록과 메모 입력이 열려요</span></div>
+    <div class="tbl-wrap"><table class="wide">
+      <thead><tr><th style="width:12%">참여자</th><th style="width:8%">과제 순서</th><th style="width:24%">A · 대체 재료</th><th style="width:22%">B · 식비 절약</th><th style="width:18%">C · 컨디션·기력</th><th style="width:16%">먼저 쓰고 싶은 기능</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+  </section>
+</div>
+
+<div class="dim" id="dim" hidden></div>
+<aside class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="d-name"></aside>
+
+<script src="config.js"></script>
+<script>
+const CFG=window.TEST_CONFIG||{};
+const EP=String(CFG.endpoint||'').trim();
+const LKEY='fridge-test-log-v2',AKEY='fridge-admin-key';
+const FN={A:'대체 재료',B:'식비 절약',C:'컨디션·기력'};
+const REHEARSAL='리허설·역할 연습';
+const LABEL={start:'테스트 시작',hub_view:'과제 목록',task_open:'과제 상황 보기',task_start:'과제 시작',task_leave:'과제 중간에 목록으로',task_end:'과제 끝',recipe_open:'레시피 열기',fix_select:'없는 재료 처리 선택',fix_other:'다른 메뉴 보기',hard_seen:'대체 어려운 메뉴 봄',alt_open:'추천 대안 메뉴 열기',decide:'메뉴 결정',cook_start:'요리 시작',cook_step:'다음 단계',cook_done:'다 만들었어요',cook_exit:'조리 화면에서 나감',cook_fridge_update:'다 쓴 재료 정리',help_open:'여기서 막혔어요',help:'도움말 봄',budget_edit:'예산 수정',budget_set:'예산 설정',budget_skip:'예산 건너뜀',budget_reopen:'예산 화면 다시 열기',pick:'저녁 후보 담기',unpick:'저녁 후보 빼기',opt_toggle:'선택 구매 바꾸기',over_budget:'예산 초과 상태',cond_toggle:'조건 바꾸기',cond_clear:'조건 없이 보기',fridge_view:'냉장고 보기',add_open:'재료 넣기 열기',item_add:'재료 추가',add_close:'재료 넣기 닫기',item_open:'재료 눌러봄',item_edit:'재료 수정',item_status:'재료 상태 변경',swipe:'스와이프',undo:'되돌리기',back:'뒤로',exclude:'못 먹는 재료 설정',compare_open:'비교 화면 열기',compare_toggle:'기능 카드 선택',compare_first:'먼저 쓸 기능 선택',compare_done:'비교 답변 완료',tester_open:'진행자 메뉴',tester_action:'진행자 조작',session_end:'다음 참가자로 넘김'};
+const VIEW={hub:'과제 목록',situation:'상황 안내',aList:'A 메뉴 목록',bSetup:'B 예산 설정',bList:'B 메뉴 목록',cList:'C 메뉴 목록',recipe:'레시피',cook:'조리',taskDone:'과제 끝',compare:'비교',fridge:'냉장고'};
+
+let KEY='';try{KEY=localStorage.getItem(AKEY)||''}catch(e){}
+let ALL=[],openSid=null,draft=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>v===''||v===null||v===undefined||isNaN(+v)?null:+v;
+const dur=v=>{const n=num(v);if(n===null)return '-';return n<60?`${n}초`:`${Math.floor(n/60)}분 ${n%60}초`};
+const mmss=n=>`${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`;
+const won=v=>{const n=num(v);return n===null?'-':`${n.toLocaleString('ko-KR')}원`};
+const date=v=>{if(!v)return '-';const d=new Date(v);return isNaN(d)?String(v):`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`};
+const list=v=>String(v||'').split(',').map(x=>x.trim()).filter(Boolean);
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.append(t);setTimeout(()=>t.remove(),2200)}
+function setStatus(cls,text){const s=$('status');s.className='status '+cls;s.lastElementChild.textContent=text}
+function showMsg(m){const el=$('msg');el.hidden=!m;el.textContent=m||''}
+function readLog(){try{return JSON.parse(localStorage.getItem(LKEY))||{}}catch(e){return{}}}
+function writeLog(l){try{localStorage.setItem(LKEY,JSON.stringify(l))}catch(e){}}
+$('ga-state').textContent=CFG.ga4Id?`GA4 ${CFG.ga4Id} 연결됨 · 퍼널은 GA4 탐색 분석에서 봐요`:'GA4 미연결';
+
+/* ---------- load ---------- */
+function normalize(sessions,events){
+  const by={};
+  events.forEach(e=>{let d=e.data;if(typeof d==='string'){try{d=JSON.parse(d)}catch(x){d={}}}(by[e.sid]=by[e.sid]||[]).push({t:+e.t||0,type:e.type,d:d||{},at:e.at})});
+  return sessions.map(s=>{
+    const notes={...(s.notes||{})};Object.keys(s).forEach(k=>{if(k.startsWith('note_'))notes[k.slice(5)]=s[k]});
+    const evs=(by[s.sid]||s.events||[]).slice().sort((a,b)=>a.t-b.t||String(a.at).localeCompare(String(b.at)));
+    return{...s,notes,events:evs};
+  }).sort((a,b)=>String(a.startedAt).localeCompare(String(b.startedAt)));
+}
+async function load(){
+  showMsg('');
+  if(!EP){
+    setStatus('local','기록 서버 미연결 · 이 브라우저에 저장된 기록만 보여요');$('key').hidden=true;$('connect').hidden=true;
+    const L=readLog();ALL=normalize(Object.values(L).filter(x=>x.sum).map(x=>({...x.sum,notes:x.notes||{},events:x.events||[]})),[]);render();return;
+  }
+  if(!KEY){setStatus('','관리자 비밀번호를 입력해 주세요');ALL=[];render();return}
+  setStatus('','불러오는 중');
+  try{
+    const r=await fetch(`${EP}?key=${encodeURIComponent(KEY)}&_=${Date.now()}`);const j=await r.json();
+    if(!j.ok){setStatus('err','불러오지 못했어요');showMsg(j.error==='unauthorized'?'비밀번호가 Code.gs의 ADMIN_KEY와 달라요.':'서버 오류: '+j.error);ALL=[];render();return}
+    ALL=normalize(j.sessions||[],j.events||[]);setStatus('ok',`기록 서버 연결됨 · ${date(new Date().toISOString())} 기준`);render();
+  }catch(e){setStatus('err','연결하지 못했어요');showMsg('config.js의 주소가 맞는지, Apps Script가 ‘모든 사용자’ 권한의 웹 앱으로 배포됐는지 확인해 주세요.')}
+}
+async function post(body){const r=await fetch(EP,{method:'POST',body:JSON.stringify({...body,key:KEY})});const j=await r.json().catch(()=>({ok:true}));if(j.ok===false)throw new Error(j.error)}
+
+/* ---------- derived ---------- */
+const real=()=>ALL.filter(s=>s.notes.source!==REHEARSAL);
+const done=(s,T)=>s[T+'_status']==='완료';
+const aOk=s=>done(s,'A')&&!!s.A_fixes&&s.notes.A_help!=='도움 있음';
+const bOk=s=>s.B_mode==='설정함'&&done(s,'B')&&num(s.B_remaining)!==null&&num(s.B_remaining)>=0&&s.notes.B_help!=='도움 있음';
+const cOk=s=>s.notes.C_basis==='시간·수고 정보';
+function stops(s,T){
+  const out=[];const st=s[T+'_status'];
+  if(st==='중단')out.push('과제를 중간에 끝냄');
+  else if(st==='진행 중')out.push('끝내지 않고 목록으로 나감');
+  else if(!st)out.push('과제를 하지 않음');
+  if(T==='B'&&s.B_mode==='건너뜀')out.push('예산 설정 건너뜀');
+  if(T==='C'&&s.C_condCleared==='예')out.push('조건을 모두 끔');
+  if(s.notes[T+'_stop'])out.push('메모: '+s.notes[T+'_stop']);
+  return out;
+}
+function criteria(){
+  const D=real(),n=D.length,c=[];
+  const m3=(t,rule,when,v,src,missing,note)=>({t,rule,when,v,src,missing,note,ratio:.6});
+  c.push(m3('A에서 대체·생략 방법을 활용해 메뉴를 선택한다','5명 중 3명 이상이 도움 없이 대체 또는 생략을 선택하고 요리를 이어감','A 과제 중',D.filter(aOk).length,'자동 · 메모(도움 있음이면 제외)',0,`대체·생략을 고른 뒤 요리를 시작한 사람 ${D.filter(s=>done(s,'A')&&s.A_fixes).length}명`));
+  c.push(m3('B에서 예산을 설정하고 메뉴를 선택한다','5명 중 3명 이상이 설정 부담을 감수하고 예산에 맞는 메뉴를 고름','B 과제 중',D.filter(bOk).length,'자동 · 메모(도움 있음이면 제외)',0,`예산 건너뜀 ${D.filter(s=>s.B_mode==='건너뜀').length}명 · 기본값 그대로 ${D.filter(s=>s.B_edited==='기본값 그대로').length}명 · 부담 느낌(메모) ${D.filter(s=>s.notes.B_burden==='부담 느낌').length}명`));
+  const cDone=D.filter(s=>done(s,'C'));
+  c.push(m3('C에서 시간·수고 정보를 이용해 메뉴를 선택한다','5명 중 3명 이상이 조리 시간·수고 정보를 근거로 메뉴를 고름','C 과제 중',D.filter(cOk).length,'메모(선택 근거)',cDone.filter(s=>!s.notes.C_basis).length,`C에서 메뉴를 고른 사람 ${cDone.length}명 · 조건을 바꾼 사람 ${D.filter(s=>+s.C_condChanges>0).length}명`));
+  c.push({t:'입력이나 설정에서 막힌다',rule:'기능별로 입력을 건너뛰거나 중단한 사람과 이유를 기록',when:'각 과제 중',trio:['A','B','C'].map(T=>{const who=D.filter(s=>stops(s,T).length);return{T,v:who.length,sub:who.map(s=>s.name).join(', ')}})});
+  c.push({t:'기능별로 구체적인 효용을 설명한다',rule:'“좋다”가 아니라 어떤 상황에서 어떻게 도움이 되는지 설명하는지 확인',when:'각 과제 직후 · 메모',trio:['A','B','C'].map(T=>({T,v:D.filter(s=>s.notes[T+'_benefit']==='구체적으로 설명').length,sub:`메모 ${D.filter(s=>s.notes[T+'_benefit']).length}/${n}명`}))});
+  c.push({t:'가장 먼저 쓰고 싶은 기능을 고른다',rule:'1순위와 선택 이유, 포기한 기능을 기록',when:'세 과제 완료 후 · 자동',trio:['A','B','C'].map(T=>({T,v:D.filter(s=>s.firstPick===T).length,sub:`써보고 싶음 ${D.filter(s=>list(s.compareSel).includes(T)).length} · 포기 ${D.filter(s=>list(s.notes.giveUp).includes(T)).length}`}))});
+  return{n,c};
+}
+
+/* ---------- render ---------- */
+function render(){
+  const {n,c}=criteria(),reh=ALL.length-n;
+  $('n-label').textContent=ALL.length?`참여자 ${n}명${reh?` · 리허설 ${reh}건 제외`:''}`:'';
+  $('crit').innerHTML=c.map(x=>{
+    if(x.trio)return `<div class="ci"><div class="top"><div class="t">${x.t}</div><span class="pill grey">기록</span></div>
+      <div class="trio">${x.trio.map(y=>`<div><span>${y.T} · ${FN[y.T]}</span><b>${y.v}명</b>${y.sub?`<em>${esc(y.sub)}</em>`:''}</div>`).join('')}</div>
+      <div class="rule">${x.rule}<br>${x.when}</div></div>`;
+    const target=3,left=Math.max(0,5-n);
+    const st=!n?['grey','기록 없음']:x.missing?['wait',`메모 ${x.missing}명 남음`]:x.v>=target?['ok','기준 충족']:x.v+left>=target?['wait',`${target-x.v}명 더 필요 · 남은 ${left}명`]:['no','기준 미달'];
+    return `<div class="ci"><div class="top"><div class="t">${x.t}</div><span class="pill ${st[0]}">${st[1]}</span></div>
+      <div class="big">${x.v}<small>/ ${n}명 · 기준 최소 ${target}명</small></div>
+      <div class="bar"><i style="width:${n?Math.min(100,x.v/Math.max(n,5)*100):0}%"></i><b style="left:calc(60% - 1px)"></b></div>
+      <div class="rule">${x.rule}<br>${x.when} · ${x.src}${x.note?`<br>${esc(x.note)}`:''}</div></div>`;
+  }).join('');
+  const D=real();
+  $('fn-rows').innerHTML=['A','B','C'].map(T=>{
+    const dn=D.filter(s=>done(s,T)),st=D.filter(s=>stops(s,T).length),why=D.filter(s=>s.notes[T+'_why']);
+    return `<tr><td><div class="nm">${T}. ${FN[T]}</div></td><td class="num"><b>${dn.length}</b> / ${D.length}명</td>
+      <td>${st.length?st.map(s=>`<div><b>${esc(s.name)}</b> <span class="sm">${esc(stops(s,T).join(' · '))}</span></div>`).join(''):'<span class="sm">없음</span>'}</td>
+      <td>${why.length?why.map(s=>`<div><b>${esc(s.name)}</b> ${esc(s.notes[T+'_why'])}</div>`).join(''):'<span class="sm">메모 전</span>'}</td></tr>`}).join('');
+  const stPill=v=>({'완료':'ok','중단':'no','진행 중':'wait'}[v]||'grey');
+  $('rows').innerHTML=ALL.length?ALL.map(s=>`<tr data-sid="${esc(s.sid)}" tabindex="0" class="${s.notes.source===REHEARSAL?'reh':''}">
+    <td><div class="nm">${esc(s.name||'(이름 없음)')}</div><div class="sm">${esc(s.group||'구분 없음')} · ${date(s.startedAt)}${s.notes.source===REHEARSAL?' · 리허설':''}</div></td>
+    <td class="num">${esc(s.order||'-')}</td>
+    <td><span class="pill ${stPill(s.A_status)}">${esc(s.A_status||'안 함')}</span>${s.A_menu?`<div class="nm" style="margin-top:4px">${esc(s.A_menu)}</div>`:''}${s.A_fixes?`<div class="sm">${esc(s.A_fixes)}</div>`:''}${num(s.A_sec)!==null?`<div class="sm">결정까지 ${dur(s.A_sec)}</div>`:''}</td>
+    <td><span class="pill ${stPill(s.B_status)}">${esc(s.B_status||'안 함')}</span>${s.B_mode?` <span class="pill ${s.B_mode==='설정함'?'blue':'grey'}">예산 ${esc(s.B_mode)}</span>`:''}${s.B_picks?`<div class="nm" style="margin-top:4px">${esc(s.B_picks)}</div>`:''}${s.B_mode==='설정함'&&num(s.B_remaining)!==null?`<div class="sm">지출 ${won(s.B_spent)} · 남은 예산 ${won(s.B_remaining)}</div>`:''}${num(s.B_sec)!==null?`<div class="sm">결정까지 ${dur(s.B_sec)}</div>`:''}</td>
+    <td><span class="pill ${stPill(s.C_status)}">${esc(s.C_status||'안 함')}</span>${s.C_menu?`<div class="nm" style="margin-top:4px">${esc(s.C_menu)}</div>`:''}${s.C_conds?`<div class="sm">조건: ${esc(s.C_conds)}</div>`:''}${num(s.C_sec)!==null?`<div class="sm">결정까지 ${dur(s.C_sec)}</div>`:''}</td>
+    <td>${s.firstPick?`<span class="pill dark">${esc(s.firstPick)} · ${FN[s.firstPick]||''}</span>`:'<span class="sm">-</span>'}${s.compareSel?`<div class="sm" style="margin-top:4px">써보고 싶음: ${esc(s.compareSel)}</div>`:''}${s.notes.firstReason?`<div class="sm">${esc(s.notes.firstReason)}</div>`:''}</td>
+   </tr>`).join(''):`<tr><td colspan="6"><div class="empty">${EP&&!KEY?'관리자 비밀번호를 입력하면 기록이 보여요.':'아직 기록이 없어요. 참여자가 이름을 입력하고 시작하면 여기에 쌓여요.'}</div></td></tr>`;
+  if(openSid)renderDrawer();
+}
+
+const TASK_FORM={
+ A:[{k:'A_help',l:'진행자 도움 없이 대체·생략을 골랐나요?',o:['도움 없음','도움 있음']}],
+ B:[{k:'B_help',l:'진행자 도움 없이 예산을 정하고 골랐나요?',o:['도움 없음','도움 있음']},{k:'B_burden',l:'예산·입금일 입력이 부담스러워 보였나요?',o:['부담 없음','부담 느낌']}],
+ C:[{k:'C_help',l:'진행자 도움 없이 골랐나요?',o:['도움 없음','도움 있음']},{k:'C_basis',l:'무엇을 근거로 메뉴를 골랐나요?',o:['시간·수고 정보','다른 이유'],hint:'C 판단 기준에 쓰여요'}]
+};
+const COMMON=T=>[{k:T+'_benefit',l:'효용을 어떻게 설명했나요?',o:['구체적으로 설명','“좋다” 수준']},{k:T+'_why',l:'선택 이유',text:true,ph:'예) 장 보러 나가기 싫어서 생략을 골랐다'},{k:T+'_stop',l:'막히거나 건너뛴 이유',text:true,ph:'예) 입금일 숫자 바꾸는 곳을 못 찾음'}];
+const OVERALL=[{k:'firstReason',l:'1순위로 고른 이유',text:true,ph:'참여자가 말한 이유'},{k:'giveUp',l:'포기한 기능',o:['A','B','C'],multi:true},{k:'memo',l:'메모',text:true,area:true,ph:'관찰한 행동, 인상 깊은 말'}];
+
+function field(f){
+  if(f.text)return `<div class="q"><label for="n-${f.k}">${f.l}</label>${f.area?`<textarea id="n-${f.k}" rows="4" placeholder="${esc(f.ph)}">${esc(draft[f.k])}</textarea>`:`<input type="text" id="n-${f.k}" placeholder="${esc(f.ph)}" value="${esc(draft[f.k])}">`}</div>`;
+  const cur=list(draft[f.k]);
+  return `<div class="q"><span class="ql">${f.l}${f.hint?` <span class="hint">${f.hint}</span>`:''}</span><div class="opts">${f.o.map(o=>`<button type="button" class="${cur.includes(o)?'on':''}" data-nk="${f.k}" data-nv="${esc(o)}" data-multi="${f.multi?1:0}" aria-pressed="${cur.includes(o)}">${o}</button>`).join('')}</div></div>`;
+}
+const ALL_TEXT=()=>[...['A','B','C'].flatMap(T=>COMMON(T)),...OVERALL].filter(f=>f.text);
+function openDrawer(sid){openSid=sid;const s=ALL.find(x=>x.sid===sid);if(!s)return;draft={...s.notes};$('drawer').innerHTML='';$('dim').hidden=false;$('drawer').hidden=false;renderDrawer();document.body.style.overflow='hidden'}
+function closeDrawer(){openSid=null;draft=null;$('dim').hidden=true;$('drawer').hidden=true;document.body.style.overflow=''}
+function renderDrawer(){
+  const s=ALL.find(x=>x.sid===openSid);if(!s){closeDrawer();return}
+  const prev=$('drawer').querySelector('.db'),top=prev?prev.scrollTop:0;
+  const kv=(l,v)=>`<div><span class="cap">${l}</span><b>${v||'-'}</b></div>`;
+  const auto={
+   A:kv('상태',esc(s.A_status||'안 함'))+kv('결정 메뉴',esc(s.A_menu))+kv('없는 재료 처리',esc(s.A_fixes))+kv('결정까지',dur(s.A_sec))+kv('열어본 레시피',esc(s.A_opened))+kv('다른 메뉴 보기 / 대체 어려운 메뉴',`${+s.A_otherMenu||0}회 / ${s.A_hardSeen==='예'?'봄':'안 봄'}`),
+   B:kv('상태',esc(s.B_status||'안 함'))+kv('예산',s.B_mode==='설정함'?`${esc(s.B_days)}일 · ${won(s.B_budget)} (${esc(s.B_edited)})`:esc(s.B_mode))+kv('고른 저녁',esc(s.B_picks))+kv('지출 / 남은 예산',`${won(s.B_spent)} / ${won(s.B_remaining)}`)+kv('결정까지',dur(s.B_sec))+kv('예산 수정 / 담기·빼기',`${+s.B_edits||0}회 / ${+s.B_pickActions||0}회`),
+   C:kv('상태',esc(s.C_status||'안 함'))+kv('결정 메뉴',esc(s.C_menu))+kv('결정 시 조건',esc(s.C_conds))+kv('결정까지',dur(s.C_sec))+kv('열어본 레시피',esc(s.C_opened))+kv('조건 바꾼 횟수',`${+s.C_condChanges||0}회${s.C_condCleared==='예'?' · 모두 끈 적 있음':''}`)
+  };
+  $('drawer').innerHTML=`<div class="dh"><div style="flex:1;min-width:0"><h2 id="d-name">${esc(s.name||'(이름 없음)')}</h2><div class="cap" style="margin-top:4px">${esc(s.group||'구분 없음')} · ${date(s.startedAt)} · ${esc(s.device||'')} · 순서 ${esc(s.order||'-')}</div></div><button type="button" class="x" id="d-close" aria-label="닫기">✕</button></div>
+   <div class="db">
+    ${field({k:'source',l:'기록 구분',o:['실제 참여자',REHEARSAL],hint:'리허설은 판단 기준 계산에서 빠져요'})}
+    ${['A','B','C'].map(T=>`<div class="tsec"><div class="th"><span class="pill dark">${T}</span><h2 style="font-size:15px">${FN[T]}</h2></div>
+      <div class="kv">${auto[T]}</div>
+      ${stops(s,T).length?`<p class="cap" style="margin:0">막힘 신호: ${esc(stops(s,T).filter(x=>!x.startsWith('메모')).join(' · '))}</p>`:''}
+      ${[...TASK_FORM[T],...COMMON(T)].map(field).join('')}</div>`).join('')}
+    <div class="tsec"><div class="th"><h2 style="font-size:15px">세 과제를 마친 뒤</h2></div>
+      <div class="kv">${kv('써보고 싶은 기능',esc(s.compareSel))+kv('먼저 쓸 기능',s.firstPick?`${esc(s.firstPick)} · ${FN[s.firstPick]||''}`:'')}</div>
+      ${OVERALL.map(field).join('')}</div>
+    <div class="save-row"><button type="button" class="btn" id="d-save">메모 저장</button><span class="cap" id="d-state"></span></div>
+    <section style="gap:8px"><h2 style="font-size:15px">행동 타임라인 <span class="cap">${s.events.length}개</span></h2>
+     <div class="tl">${s.events.length?s.events.map(e=>`<div><span>${mmss(e.t)}</span><i>${esc((e.d&&e.d.task)||'')}</i><p style="margin:0">${esc(LABEL[e.type]||e.type)} <em>${esc(detail(e))}</em></p></div>`).join(''):'<p class="cap">상세 기록이 없어요</p>'}</div></section>
+    <section><button type="button" class="btn danger" id="d-del" style="align-self:flex-start">이 참여자 기록 삭제</button><p class="cap" style="margin:0">시트에서도 함께 지워져요. 리허설은 삭제 대신 ‘기록 구분’으로 표시해도 돼요.</p></section>
+   </div>`;
+  const db=$('drawer').querySelector('.db');if(db)db.scrollTop=top;
+}
+function detail(e){const d=e.d||{};
+  switch(e.type){
+    case 'task_end':return d.decided?'메뉴 정함':'정하지 않고 끝냄';
+    case 'recipe_open':return `${d.name||''}${VIEW[d.from]?` · ${VIEW[d.from]}에서`:''}`;
+    case 'fix_select':return `${d.recipe} · ${d.ingredient} → ${d.choice}`;
+    case 'fix_other':case 'hard_seen':return `${d.recipe||''} ${d.ingredient||''}`;
+    case 'alt_open':return `${d.from} → ${d.to}`;
+    case 'decide':return `${d.name||''}${d.detail?` · ${d.detail}`:''}${d.conds?` · 조건 ${d.conds}`:''}${d.spent!==undefined&&d.spent!==''?` · 지출 ${won(d.spent)}`:''}${d.remaining!==undefined&&d.remaining!==''?` · 남은 ${won(d.remaining)}`:''}`;
+    case 'cook_start':case 'cook_done':return d.name||'';
+    case 'cook_step':case 'cook_exit':case 'help_open':return `${d.step}단계`;
+    case 'help':return `${d.q} (${d.step}단계)`;
+    case 'budget_edit':return `${d.field} ${d.field==='예산'?won(d.value):d.value+'일'}`;
+    case 'budget_set':return `${d.days}일 · ${won(d.budget)}${d.edited?' · 수정함':' · 기본값'}`;
+    case 'pick':case 'unpick':return `${d.name} · ${won(d.cost)}${d.remaining!==''&&d.remaining!==undefined?` · 남은 ${won(d.remaining)}`:''}`;
+    case 'opt_toggle':return `${d.name} ${d.on?'켬':'끔'}`;
+    case 'over_budget':return `${d.name} · ${won(d.remaining)}`;
+    case 'cond_toggle':return `${d.cond} ${d.on?'켬':'끔'}`;
+    case 'item_add':return d.name||'';
+    case 'add_close':return `${d.added||0}개 넣음`;
+    case 'item_open':return d.name||'';
+    case 'item_edit':return `${d.name} ${d.field}`;
+    case 'item_status':return d.status||'';
+    case 'swipe':return `${d.name||''} ${d.dir||''}`;
+    case 'back':return VIEW[d.from]?`${VIEW[d.from]}에서`:'';
+    case 'start':return d.group||'';
+    case 'exclude':return d.v||'없음';
+    case 'compare_toggle':return `${d.fn} ${d.on?'선택':'해제'}`;
+    case 'compare_first':return d.fn||'해제';
+    case 'compare_done':return `써보고 싶음 ${d.sel||'-'} · 먼저 ${d.first||'-'}`;
+    case 'tester_action':return d.what||'';
+    case 'undo':return d.msg||'';
+    default:return '';
+  }
+}
+
+/* ---------- events ---------- */
+$('rows').addEventListener('click',e=>{const tr=e.target.closest('tr[data-sid]');if(tr)openDrawer(tr.dataset.sid)});
+$('rows').addEventListener('keydown',e=>{const tr=e.target.closest('tr[data-sid]');if(tr&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openDrawer(tr.dataset.sid)}});
+$('dim').addEventListener('click',closeDrawer);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&openSid)closeDrawer()});
+function keepText(){ALL_TEXT().forEach(f=>{const el=$('n-'+f.k);if(el)draft[f.k]=el.value})}
+$('drawer').addEventListener('click',async e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.id==='d-close')return closeDrawer();
+  if(b.dataset.nk){const k=b.dataset.nk,v=b.dataset.nv;keepText();
+    if(b.dataset.multi==='1'){let cur=list(draft[k]);cur.includes(v)?cur=cur.filter(x=>x!==v):cur.push(v);draft[k]=cur.sort().join(', ')}
+    else draft[k]=draft[k]===v?'':v;
+    renderDrawer();$('d-state').textContent='저장하지 않은 변경이 있어요';return}
+  if(b.id==='d-save'){keepText();const sid=openSid,notes={...draft};b.disabled=true;$('d-state').textContent='저장 중';
+    try{if(EP)await post({action:'note',sid,notes});else{const L=readLog();if(L[sid]){L[sid].notes=notes;writeLog(L)}}
+      const s=ALL.find(x=>x.sid===sid);if(s)s.notes=notes;render();toast('메모를 저장했어요')}
+    catch(err){b.disabled=false;$('d-state').textContent=err.message==='unauthorized'?'비밀번호가 맞지 않아 저장하지 못했어요':'저장하지 못했어요. 연결을 확인해 주세요'}
+    return}
+  if(b.id==='d-del'){
+    if(b.dataset.confirm!=='1'){b.dataset.confirm='1';b.textContent='한 번 더 누르면 삭제돼요';return}
+    const sid=openSid;b.disabled=true;
+    try{if(EP)await post({action:'delete',sid});else{const L=readLog();delete L[sid];writeLog(L)}
+      ALL=ALL.filter(x=>x.sid!==sid);closeDrawer();render();toast('기록을 삭제했어요')}
+    catch(err){b.disabled=false;b.textContent='삭제하지 못했어요. 다시 시도'}
+  }
+});
+$('connect').addEventListener('click',()=>{KEY=$('key').value.trim();try{localStorage.setItem(AKEY,KEY)}catch(e){}load()});
+$('key').addEventListener('keydown',e=>{if(e.key==='Enter')$('connect').click()});
+$('reload').addEventListener('click',()=>{const keep=openSid;load().then(()=>{if(keep&&ALL.some(x=>x.sid===keep)){openSid=keep;renderDrawer()}})});
+$('csv').addEventListener('click',()=>{
+  if(!ALL.length){toast('내려받을 기록이 없어요');return}
+  const N=k=>s=>s.notes[k];
+  const cols=[['참여자','name'],['구분','group'],['기록 구분',s=>s.notes.source||'실제 참여자'],['테스트 시작','startedAt'],['기기','device'],['과제 순서','order'],
+    ['A 상태','A_status'],['A 결정 메뉴','A_menu'],['A 없는 재료 처리','A_fixes'],['A 결정까지(초)','A_sec'],['A 다른 메뉴 보기','A_otherMenu'],['A 대체 어려운 메뉴 봄','A_hardSeen'],['A 기준 충족',s=>aOk(s)?'예':'아니오'],['A 도움',N('A_help')],['A 효용 설명',N('A_benefit')],['A 선택 이유',N('A_why')],['A 막힌 이유',N('A_stop')],
+    ['B 상태','B_status'],['B 예산 설정','B_mode'],['B 남은 날','B_days'],['B 예산','B_budget'],['B 기본값 수정','B_edited'],['B 고른 저녁','B_picks'],['B 지출','B_spent'],['B 남은 예산','B_remaining'],['B 결정까지(초)','B_sec'],['B 기준 충족',s=>bOk(s)?'예':'아니오'],['B 도움',N('B_help')],['B 입력 부담',N('B_burden')],['B 효용 설명',N('B_benefit')],['B 선택 이유',N('B_why')],['B 막힌 이유',N('B_stop')],
+    ['C 상태','C_status'],['C 결정 메뉴','C_menu'],['C 결정 시 조건','C_conds'],['C 조건 변경','C_condChanges'],['C 결정까지(초)','C_sec'],['C 선택 근거',N('C_basis')],['C 도움',N('C_help')],['C 효용 설명',N('C_benefit')],['C 선택 이유',N('C_why')],['C 막힌 이유',N('C_stop')],
+    ['써보고 싶은 기능','compareSel'],['먼저 쓸 기능','firstPick'],['1순위 이유',N('firstReason')],['포기한 기능',N('giveUp')],['메모',N('memo')]];
+  const cell=v=>{v=String(v??'');if(/^[=+\-@]/.test(v))v="'"+v;return /[",\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v};
+  const csv='﻿'+[cols.map(c=>c[0]).join(','),...ALL.map(s=>cols.map(([,k])=>cell(typeof k==='function'?k(s):s[k])).join(','))].join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=`냉장고노트_ABC실험_${new Date().toISOString().slice(0,10)}.csv`;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+});
+$('key').value=KEY;
+load();
+</script>
+</body>
+</html>
