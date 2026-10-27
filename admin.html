@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>냉장고 노트 실험 기록</title>
+<title>키친레터 실험 기록</title>
 <style>
 /* Layout: 한 열 대시보드 · 판단 기준 → 기능별 반응 표 → 참여자 표 → 참여자 상세(오른쪽 패널) */
 :root{
@@ -127,8 +127,8 @@ td .sm{font-size:12px;color:var(--fg3)}
 <body>
 <div class="wrap">
   <div class="head">
-    <div><h1>냉장고 노트 실험 기록</h1>
-      <p class="sub">A 대체 재료 · B 식비 절약 · C 컨디션·기력 중 어떤 가치 제안이 실제 행동으로 이어지는지 따로 확인해요. 화면 행동은 자동으로 쌓이고, 말로 확인한 부분은 참여자를 눌러 메모로 남겨요.</p></div>
+    <div><h1>키친레터 실험 기록</h1>
+      <p class="sub">A 대체 재료 · B 식비 절약 · C 컨디션·기력 중 어떤 가치 제안이 실제 행동으로 이어지는지 따로 확인해요. 화면 행동과 참여자가 기기에서 답한 돌아보기 설문은 자동으로 쌓이고, 진행자는 관찰한 것만 메모로 남겨요.</p></div>
     <div class="tools">
       <button type="button" class="btn ghost" id="reload">새로고침</button>
       <button type="button" class="btn ghost" id="csv">CSV 내려받기</button>
@@ -172,10 +172,10 @@ td .sm{font-size:12px;color:var(--fg3)}
 <script>
 const CFG=window.TEST_CONFIG||{};
 const EP=String(CFG.endpoint||'').trim();
-const LKEY='fridge-test-log-v2',AKEY='fridge-admin-key';
+const LKEY='kitchenletter.testlog.v1',AKEY='kitchenletter-admin-key';
 const FN={A:'대체 재료',B:'식비 절약',C:'컨디션·기력'};
 const REHEARSAL='리허설·역할 연습';
-const LABEL={start:'테스트 시작',hub_view:'과제 목록',task_open:'과제 상황 보기',task_start:'과제 시작',task_leave:'과제 중간에 목록으로',task_end:'과제 끝',recipe_open:'레시피 열기',fix_select:'없는 재료 처리 선택',fix_other:'다른 메뉴 보기',hard_seen:'대체 어려운 메뉴 봄',alt_open:'추천 대안 메뉴 열기',decide:'메뉴 결정',cook_start:'요리 시작',cook_step:'다음 단계',cook_done:'다 만들었어요',cook_exit:'조리 화면에서 나감',cook_fridge_update:'다 쓴 재료 정리',help_open:'여기서 막혔어요',help:'도움말 봄',budget_edit:'예산 수정',budget_set:'예산 설정',budget_skip:'예산 건너뜀',budget_reopen:'예산 화면 다시 열기',pick:'저녁 후보 담기',unpick:'저녁 후보 빼기',opt_toggle:'선택 구매 바꾸기',over_budget:'예산 초과 상태',cond_toggle:'조건 바꾸기',cond_clear:'조건 없이 보기',fridge_view:'냉장고 보기',add_open:'재료 넣기 열기',item_add:'재료 추가',add_close:'재료 넣기 닫기',item_open:'재료 눌러봄',item_edit:'재료 수정',item_status:'재료 상태 변경',swipe:'스와이프',undo:'되돌리기',back:'뒤로',exclude:'못 먹는 재료 설정',compare_open:'비교 화면 열기',compare_toggle:'기능 카드 선택',compare_first:'먼저 쓸 기능 선택',compare_done:'비교 답변 완료',tester_open:'진행자 메뉴',tester_action:'진행자 조작',session_end:'다음 참가자로 넘김'};
+const LABEL={start:'테스트 시작',task_open:'과제 상황 보기',task_start:'과제 시작',situation_view:'상황 다시 보기',task_end:'과제 끝',screen:'화면',recipe_open:'레시피 열기',sub_open:'대체 방법 보기',sub_choice:'없는 재료 처리 선택',cook_start:'요리 시작',decide:'결정',cook_done:'요리 완성',cook_exit:'조리 화면 나감',help_open:'단계 도움말 열기',help:'도움말 질문',filter_open:'레시피 필터 열기',filter_toggle:'필터 조건',filter_apply:'필터 적용',mode_save:'모드 저장',mode_off:'모드 끔',budget_edit:'예산 입력',recipe_search:'레시피 검색',category:'레시피 분류',shop_add:'장보기 추가',cart_toggle:'장바구니 체크',shop_finish_tap:'장보기 완료 누름',shop_channel:'구매처 변경',shop_remove:'장보기 삭제',shop_done:'장보기 완료',item_status:'재료 상태 변경',memo_open:'메모 열기',chat:'요리 도우미 질문',exclude:'못 먹는 재료',exclude_in_app:'앱에서 비선호 설정',tester_open:'진행자 메뉴',compare_open:'비교 열기',compare_toggle:'기능 선택',compare_first:'먼저 쓸 기능',compare_done:'비교 완료',survey_answer:'설문 답변',survey_final:'마지막 설문',session_end:'다음 참가자로 넘김',guide:'화살표 안내'};
 const VIEW={hub:'과제 목록',situation:'상황 안내',aList:'A 메뉴 목록',bSetup:'B 예산 설정',bList:'B 메뉴 목록',cList:'C 메뉴 목록',recipe:'레시피',cook:'조리',taskDone:'과제 끝',compare:'비교',fridge:'냉장고'};
 
 let KEY='';try{KEY=localStorage.getItem(AKEY)||''}catch(e){}
@@ -224,29 +224,35 @@ async function post(body){const r=await fetch(EP,{method:'POST',body:JSON.string
 /* ---------- derived ---------- */
 const real=()=>ALL.filter(s=>s.notes.source!==REHEARSAL);
 const done=(s,T)=>s[T+'_status']==='완료';
-const aOk=s=>done(s,'A')&&!!s.A_fixes&&s.notes.A_help!=='도움 있음';
-const bOk=s=>s.B_mode==='설정함'&&done(s,'B')&&num(s.B_remaining)!==null&&num(s.B_remaining)>=0&&s.notes.B_help!=='도움 있음';
-const cOk=s=>s.notes.C_basis==='시간·수고 정보';
+const fixKind=s=>['sub','omit'].includes(s.A_choiceKind);
+const KIND={sub:'대체',omit:'생략',buy:'사서 만들기',none:'없는 재료 없음'};
+const aOk=s=>done(s,'A')&&fixKind(s)&&s.notes.A_help!=='도움 있음';
+const bOk=s=>s.B_budgetSet==='설정함'&&done(s,'B')&&num(s.B_left)!==null&&num(s.B_left)>=0&&s.notes.B_help!=='도움 있음';
+const C_INFO=['조리 시간이 짧아서','손이 덜 가서','설거지가 적어서','불을 안 써도 돼서'];
+const cBasisAuto=s=>s.C_why?(list(s.C_why).some(x=>C_INFO.includes(x))?'시간·수고 정보':'다른 이유'):'';
+const cOk=s=>(s.notes.C_basis||cBasisAuto(s))==='시간·수고 정보';
+const burdened=s=>['조금 귀찮았어요','많이 귀찮았어요'].includes(s.B_burden);
 function stops(s,T){
   const out=[];const st=s[T+'_status'];
   if(st==='중단')out.push('과제를 중간에 끝냄');
   else if(st==='진행 중')out.push('끝내지 않고 목록으로 나감');
   else if(!st)out.push('과제를 하지 않음');
-  if(T==='B'&&s.B_mode==='건너뜀')out.push('예산 설정 건너뜀');
-  if(T==='C'&&s.C_condCleared==='예')out.push('조건을 모두 끔');
-  if(s.notes[T+'_stop'])out.push('메모: '+s.notes[T+'_stop']);
+  if(T==='B'&&st&&s.B_budgetSet!=='설정함')out.push(s.B_budgetOpened==='예'?'예산 화면을 열고 저장 안 함':'예산 설정 안 함');
+  if(T==='A'&&s.A_choiceKind==='buy')out.push('없는 재료를 사서 만들기로 고름');
+  if(s[T+'_stuck'])out.push('답변: '+s[T+'_stuck']);
+  if(T==='B'&&burdened(s))out.push('예산 입력 '+s.B_burden);
   return out;
 }
 function criteria(){
   const D=real(),n=D.length,c=[];
   const m3=(t,rule,when,v,src,missing,note)=>({t,rule,when,v,src,missing,note,ratio:.6});
-  c.push(m3('A에서 대체·생략 방법을 활용해 메뉴를 선택한다','5명 중 3명 이상이 도움 없이 대체 또는 생략을 선택하고 요리를 이어감','A 과제 중',D.filter(aOk).length,'자동 · 메모(도움 있음이면 제외)',0,`대체·생략을 고른 뒤 요리를 시작한 사람 ${D.filter(s=>done(s,'A')&&s.A_fixes).length}명`));
-  c.push(m3('B에서 예산을 설정하고 메뉴를 선택한다','5명 중 3명 이상이 설정 부담을 감수하고 예산에 맞는 메뉴를 고름','B 과제 중',D.filter(bOk).length,'자동 · 메모(도움 있음이면 제외)',0,`예산 건너뜀 ${D.filter(s=>s.B_mode==='건너뜀').length}명 · 기본값 그대로 ${D.filter(s=>s.B_edited==='기본값 그대로').length}명 · 부담 느낌(메모) ${D.filter(s=>s.notes.B_burden==='부담 느낌').length}명`));
+  c.push(m3('A에서 대체·생략 방법을 활용해 메뉴를 선택한다','5명 중 3명 이상이 도움 없이 대체 또는 생략을 선택하고 요리를 이어감','A 과제 중',D.filter(aOk).length,'자동 · 메모(도움 있음이면 제외)',0,`대체·생략으로 요리를 시작한 사람 ${D.filter(s=>s.A_menu&&fixKind(s)).length}명 · 대체 방법 시트 연 사람 ${D.filter(s=>s.A_subOpened==='예').length}명 · 사서 만들기 ${D.filter(s=>s.A_choiceKind==='buy').length}명`));
+  c.push(m3('B에서 예산을 설정하고 메뉴를 선택한다','5명 중 3명 이상이 설정 부담을 감수하고 예산에 맞는 메뉴를 고름','B 과제 중',D.filter(bOk).length,'자동 · 메모(도움 있음이면 제외)',0,`예산 화면을 연 사람 ${D.filter(s=>s.B_budgetOpened==='예').length}명 · 설정 ${D.filter(s=>s.B_budgetSet==='설정함').length}명 · 장보기 완료 ${D.filter(s=>s.B_how==='장보기 완료').length}명 · 입력이 귀찮았다고 답함 ${D.filter(burdened).length}명`));
   const cDone=D.filter(s=>done(s,'C'));
-  c.push(m3('C에서 시간·수고 정보를 이용해 메뉴를 선택한다','5명 중 3명 이상이 조리 시간·수고 정보를 근거로 메뉴를 고름','C 과제 중',D.filter(cOk).length,'메모(선택 근거)',cDone.filter(s=>!s.notes.C_basis).length,`C에서 메뉴를 고른 사람 ${cDone.length}명 · 조건을 바꾼 사람 ${D.filter(s=>+s.C_condChanges>0).length}명`));
+  c.push(m3('C에서 시간·수고 정보를 이용해 메뉴를 선택한다','5명 중 3명 이상이 조리 시간·수고 정보를 근거로 메뉴를 고름','C 과제 중',D.filter(cOk).length,'참여자 답변(고른 이유) · 메모로 고칠 수 있음',cDone.filter(s=>!s.notes.C_basis&&!s.C_why).length,`C에서 메뉴를 고른 사람 ${cDone.length}명 · ‘간단하게 먹기’를 쓴 사람 ${D.filter(s=>s.C_lowUsed==='예').length}명 · 필터를 연 사람 ${D.filter(s=>s.C_filterOpened==='예').length}명`));
   c.push({t:'입력이나 설정에서 막힌다',rule:'기능별로 입력을 건너뛰거나 중단한 사람과 이유를 기록',when:'각 과제 중',trio:['A','B','C'].map(T=>{const who=D.filter(s=>stops(s,T).length);return{T,v:who.length,sub:who.map(s=>s.name).join(', ')}})});
-  c.push({t:'기능별로 구체적인 효용을 설명한다',rule:'“좋다”가 아니라 어떤 상황에서 어떻게 도움이 되는지 설명하는지 확인',when:'각 과제 직후 · 메모',trio:['A','B','C'].map(T=>({T,v:D.filter(s=>s.notes[T+'_benefit']==='구체적으로 설명').length,sub:`메모 ${D.filter(s=>s.notes[T+'_benefit']).length}/${n}명`}))});
-  c.push({t:'가장 먼저 쓰고 싶은 기능을 고른다',rule:'1순위와 선택 이유, 포기한 기능을 기록',when:'세 과제 완료 후 · 자동',trio:['A','B','C'].map(T=>({T,v:D.filter(s=>s.firstPick===T).length,sub:`써보고 싶음 ${D.filter(s=>list(s.compareSel).includes(T)).length} · 포기 ${D.filter(s=>list(s.notes.giveUp).includes(T)).length}`}))});
+  c.push({t:'기능별로 구체적인 효용을 설명한다',rule:'“좋다”가 아니라 어떤 상황에서 어떻게 도움이 되는지 설명하는지 확인',when:'각 과제 직후 · 메모',trio:['A','B','C'].map(T=>({T,v:D.filter(s=>s.notes[T+'_benefit']==='구체적으로 설명').length,sub:`답변 ${D.filter(s=>s[T+'_benefit']).length} · 판단 ${D.filter(s=>s.notes[T+'_benefit']).length}/${n}명`}))});
+  c.push({t:'가장 먼저 쓰고 싶은 기능을 고른다',rule:'1순위와 선택 이유, 포기한 기능을 기록',when:'세 과제 완료 후 · 자동',trio:['A','B','C'].map(T=>({T,v:D.filter(s=>s.firstPick===T).length,sub:`써보고 싶음 ${D.filter(s=>list(s.compareSel).includes(T)).length} · 없어도 됨 ${D.filter(s=>list(s.giveUp).includes(T)).length}`}))});
   return{n,c};
 }
 
@@ -267,36 +273,36 @@ function render(){
   }).join('');
   const D=real();
   $('fn-rows').innerHTML=['A','B','C'].map(T=>{
-    const dn=D.filter(s=>done(s,T)),st=D.filter(s=>stops(s,T).length),why=D.filter(s=>s.notes[T+'_why']);
+    const dn=D.filter(s=>done(s,T)),st=D.filter(s=>stops(s,T).length),why=D.filter(s=>s[T+'_why']);
     return `<tr><td><div class="nm">${T}. ${FN[T]}</div></td><td class="num"><b>${dn.length}</b> / ${D.length}명</td>
       <td>${st.length?st.map(s=>`<div><b>${esc(s.name)}</b> <span class="sm">${esc(stops(s,T).join(' · '))}</span></div>`).join(''):'<span class="sm">없음</span>'}</td>
-      <td>${why.length?why.map(s=>`<div><b>${esc(s.name)}</b> ${esc(s.notes[T+'_why'])}</div>`).join(''):'<span class="sm">메모 전</span>'}</td></tr>`}).join('');
+      <td>${why.length?why.map(s=>`<div><b>${esc(s.name)}</b> ${esc(s[T+'_why'])}${s[T+'_benefit']?` <span class="sm">· 도움될 상황: ${esc(s[T+'_benefit'])}</span>`:''}</div>`).join(''):'<span class="sm">설문 답변 전</span>'}</td></tr>`}).join('');
   const stPill=v=>({'완료':'ok','중단':'no','진행 중':'wait'}[v]||'grey');
   $('rows').innerHTML=ALL.length?ALL.map(s=>`<tr data-sid="${esc(s.sid)}" tabindex="0" class="${s.notes.source===REHEARSAL?'reh':''}">
     <td><div class="nm">${esc(s.name||'(이름 없음)')}</div><div class="sm">${esc(s.group||'구분 없음')} · ${date(s.startedAt)}${s.notes.source===REHEARSAL?' · 리허설':''}</div></td>
     <td class="num">${esc(s.order||'-')}</td>
-    <td><span class="pill ${stPill(s.A_status)}">${esc(s.A_status||'안 함')}</span>${s.A_menu?`<div class="nm" style="margin-top:4px">${esc(s.A_menu)}</div>`:''}${s.A_fixes?`<div class="sm">${esc(s.A_fixes)}</div>`:''}${num(s.A_sec)!==null?`<div class="sm">결정까지 ${dur(s.A_sec)}</div>`:''}</td>
-    <td><span class="pill ${stPill(s.B_status)}">${esc(s.B_status||'안 함')}</span>${s.B_mode?` <span class="pill ${s.B_mode==='설정함'?'blue':'grey'}">예산 ${esc(s.B_mode)}</span>`:''}${s.B_picks?`<div class="nm" style="margin-top:4px">${esc(s.B_picks)}</div>`:''}${s.B_mode==='설정함'&&num(s.B_remaining)!==null?`<div class="sm">지출 ${won(s.B_spent)} · 남은 예산 ${won(s.B_remaining)}</div>`:''}${num(s.B_sec)!==null?`<div class="sm">결정까지 ${dur(s.B_sec)}</div>`:''}</td>
-    <td><span class="pill ${stPill(s.C_status)}">${esc(s.C_status||'안 함')}</span>${s.C_menu?`<div class="nm" style="margin-top:4px">${esc(s.C_menu)}</div>`:''}${s.C_conds?`<div class="sm">조건: ${esc(s.C_conds)}</div>`:''}${num(s.C_sec)!==null?`<div class="sm">결정까지 ${dur(s.C_sec)}</div>`:''}</td>
-    <td>${s.firstPick?`<span class="pill dark">${esc(s.firstPick)} · ${FN[s.firstPick]||''}</span>`:'<span class="sm">-</span>'}${s.compareSel?`<div class="sm" style="margin-top:4px">써보고 싶음: ${esc(s.compareSel)}</div>`:''}${s.notes.firstReason?`<div class="sm">${esc(s.notes.firstReason)}</div>`:''}</td>
+    <td><span class="pill ${stPill(s.A_status)}">${esc(s.A_status||'안 함')}</span>${s.A_menu?`<div class="nm" style="margin-top:4px">${esc(s.A_menu)}</div>`:''}${s.A_choice?`<div class="sm">${esc(s.A_choice)}${KIND[s.A_choiceKind]?` (${KIND[s.A_choiceKind]})`:''}</div>`:''}${num(s.A_sec)!==null?`<div class="sm">결정까지 ${dur(s.A_sec)}</div>`:''}</td>
+    <td><span class="pill ${stPill(s.B_status)}">${esc(s.B_status||'안 함')}</span>${s.B_status?` <span class="pill ${s.B_budgetSet==='설정함'?'blue':'grey'}">예산 ${s.B_budgetSet==='설정함'?`${esc(s.B_days)}일 ${won(s.B_amount)}`:'안 정함'}</span>`:''}${s.B_how?`<div class="nm" style="margin-top:4px">${esc(s.B_how)}${s.B_how==='장보기 완료'?'':' · '+esc(s.B_menu)}</div>`:''}${s.B_cart?`<div class="sm">산 것: ${esc(s.B_cart)}</div>`:''}${num(s.B_spent)!==null||num(s.B_left)!==null?`<div class="sm">지출 ${won(s.B_spent)} · 남은 예산 ${won(s.B_left)}</div>`:''}${num(s.B_sec)!==null?`<div class="sm">결정까지 ${dur(s.B_sec)}</div>`:''}</td>
+    <td><span class="pill ${stPill(s.C_status)}">${esc(s.C_status||'안 함')}</span>${s.C_menu?`<div class="nm" style="margin-top:4px">${esc(s.C_menu)}</div>`:''}${s.C_time?`<div class="sm">${esc(s.C_time)}분 · 설거지 ${esc(s.C_wash)}</div>`:''}${s.C_lowChips?`<div class="sm">간단하게 먹기: ${esc(s.C_lowChips)}</div>`:''}${num(s.C_sec)!==null?`<div class="sm">결정까지 ${dur(s.C_sec)}</div>`:''}</td>
+    <td>${s.firstPick?`<span class="pill dark">${esc(s.firstPick)} · ${FN[s.firstPick]||''}</span>`:'<span class="sm">-</span>'}${s.compareSel?`<div class="sm" style="margin-top:4px">써보고 싶음: ${esc(s.compareSel)}</div>`:''}${s.firstReason?`<div class="sm">${esc(s.firstReason)}</div>`:''}${s.surveyDone==='예'?'':' <div class="sm">설문 미완료</div>'}</td>
    </tr>`).join(''):`<tr><td colspan="6"><div class="empty">${EP&&!KEY?'관리자 비밀번호를 입력하면 기록이 보여요.':'아직 기록이 없어요. 참여자가 이름을 입력하고 시작하면 여기에 쌓여요.'}</div></td></tr>`;
   if(openSid)renderDrawer();
 }
 
 const TASK_FORM={
  A:[{k:'A_help',l:'진행자 도움 없이 대체·생략을 골랐나요?',o:['도움 없음','도움 있음']}],
- B:[{k:'B_help',l:'진행자 도움 없이 예산을 정하고 골랐나요?',o:['도움 없음','도움 있음']},{k:'B_burden',l:'예산·입금일 입력이 부담스러워 보였나요?',o:['부담 없음','부담 느낌']}],
- C:[{k:'C_help',l:'진행자 도움 없이 골랐나요?',o:['도움 없음','도움 있음']},{k:'C_basis',l:'무엇을 근거로 메뉴를 골랐나요?',o:['시간·수고 정보','다른 이유'],hint:'C 판단 기준에 쓰여요'}]
+ B:[{k:'B_help',l:'진행자 도움 없이 예산을 정하고 골랐나요?',o:['도움 없음','도움 있음']}],
+ C:[{k:'C_help',l:'진행자 도움 없이 골랐나요?',o:['도움 없음','도움 있음']},{k:'C_basis',l:'무엇을 근거로 메뉴를 골랐나요?',o:['시간·수고 정보','다른 이유'],hint:'비워 두면 참여자 답변으로 판단해요'}]
 };
-const COMMON=T=>[{k:T+'_benefit',l:'효용을 어떻게 설명했나요?',o:['구체적으로 설명','“좋다” 수준']},{k:T+'_why',l:'선택 이유',text:true,ph:'예) 장 보러 나가기 싫어서 생략을 골랐다'},{k:T+'_stop',l:'막히거나 건너뛴 이유',text:true,ph:'예) 입금일 숫자 바꾸는 곳을 못 찾음'}];
-const OVERALL=[{k:'firstReason',l:'1순위로 고른 이유',text:true,ph:'참여자가 말한 이유'},{k:'giveUp',l:'포기한 기능',o:['A','B','C'],multi:true},{k:'memo',l:'메모',text:true,area:true,ph:'관찰한 행동, 인상 깊은 말'}];
+const COMMON=T=>[{k:T+'_benefit',l:'참여자가 쓴 ‘도움될 상황’은 어땠나요?',o:['구체적으로 설명','“좋다” 수준'],hint:'위 답변을 보고 판단해요'}];
+const OVERALL=[{k:'memo',l:'진행자 메모',text:true,area:true,ph:'관찰한 행동, 인상 깊은 말'}];
 
 function field(f){
   if(f.text)return `<div class="q"><label for="n-${f.k}">${f.l}</label>${f.area?`<textarea id="n-${f.k}" rows="4" placeholder="${esc(f.ph)}">${esc(draft[f.k])}</textarea>`:`<input type="text" id="n-${f.k}" placeholder="${esc(f.ph)}" value="${esc(draft[f.k])}">`}</div>`;
   const cur=list(draft[f.k]);
   return `<div class="q"><span class="ql">${f.l}${f.hint?` <span class="hint">${f.hint}</span>`:''}</span><div class="opts">${f.o.map(o=>`<button type="button" class="${cur.includes(o)?'on':''}" data-nk="${f.k}" data-nv="${esc(o)}" data-multi="${f.multi?1:0}" aria-pressed="${cur.includes(o)}">${o}</button>`).join('')}</div></div>`;
 }
-const ALL_TEXT=()=>[...['A','B','C'].flatMap(T=>COMMON(T)),...OVERALL].filter(f=>f.text);
+const ALL_TEXT=()=>OVERALL.filter(f=>f.text);
 function openDrawer(sid){openSid=sid;const s=ALL.find(x=>x.sid===sid);if(!s)return;draft={...s.notes};$('drawer').innerHTML='';$('dim').hidden=false;$('drawer').hidden=false;renderDrawer();document.body.style.overflow='hidden'}
 function closeDrawer(){openSid=null;draft=null;$('dim').hidden=true;$('drawer').hidden=true;document.body.style.overflow=''}
 function renderDrawer(){
@@ -304,19 +310,20 @@ function renderDrawer(){
   const prev=$('drawer').querySelector('.db'),top=prev?prev.scrollTop:0;
   const kv=(l,v)=>`<div><span class="cap">${l}</span><b>${v||'-'}</b></div>`;
   const auto={
-   A:kv('상태',esc(s.A_status||'안 함'))+kv('결정 메뉴',esc(s.A_menu))+kv('없는 재료 처리',esc(s.A_fixes))+kv('결정까지',dur(s.A_sec))+kv('열어본 레시피',esc(s.A_opened))+kv('다른 메뉴 보기 / 대체 어려운 메뉴',`${+s.A_otherMenu||0}회 / ${s.A_hardSeen==='예'?'봄':'안 봄'}`),
-   B:kv('상태',esc(s.B_status||'안 함'))+kv('예산',s.B_mode==='설정함'?`${esc(s.B_days)}일 · ${won(s.B_budget)} (${esc(s.B_edited)})`:esc(s.B_mode))+kv('고른 저녁',esc(s.B_picks))+kv('지출 / 남은 예산',`${won(s.B_spent)} / ${won(s.B_remaining)}`)+kv('결정까지',dur(s.B_sec))+kv('예산 수정 / 담기·빼기',`${+s.B_edits||0}회 / ${+s.B_pickActions||0}회`),
-   C:kv('상태',esc(s.C_status||'안 함'))+kv('결정 메뉴',esc(s.C_menu))+kv('결정 시 조건',esc(s.C_conds))+kv('결정까지',dur(s.C_sec))+kv('열어본 레시피',esc(s.C_opened))+kv('조건 바꾼 횟수',`${+s.C_condChanges||0}회${s.C_condCleared==='예'?' · 모두 끈 적 있음':''}`)
+   A:kv('상태',esc(s.A_status||'안 함'))+kv('결정 메뉴',esc(s.A_menu))+kv('없는 재료 처리',esc(s.A_choice)+(KIND[s.A_choiceKind]?` (${KIND[s.A_choiceKind]})`:''))+kv('결정까지',dur(s.A_sec))+kv('대체 방법 시트 / 사서 넣기',`${s.A_subOpened==='예'?'열어봄':'안 열어봄'} / ${+s.A_buyAdded||0}회`)+kv('이동 경로',esc(s.A_path)),
+   B:kv('상태',esc(s.B_status||'안 함'))+kv('예산',s.B_budgetSet==='설정함'?`${esc(s.B_days)}일 · ${won(s.B_amount)}`:(s.B_budgetOpened==='예'?'화면만 열어봄':'설정 안 함'))+kv('정한 것',esc([s.B_how,s.B_how==='장보기 완료'?s.B_cart:s.B_menu].filter(Boolean).join(' · ')))+kv('지출 / 남은 예산',`${won(s.B_spent)} / ${won(s.B_left)}`)+kv('결정까지',dur(s.B_sec))+kv('예산 입력 수정 / 장보기 추가',`${+s.B_budgetEdits||0}회 / ${+s.B_shopAdds||0}개`)+kv('이동 경로',esc(s.B_path)),
+   C:kv('상태',esc(s.C_status||'안 함'))+kv('결정 메뉴',esc(s.C_menu))+kv('조리 시간 · 설거지',s.C_time?`${esc(s.C_time)}분 · ${esc(s.C_wash)}`:'')+kv('간단하게 먹기',s.C_lowUsed==='예'?esc(s.C_lowChips):(s.C_filterOpened==='예'?'필터만 열어봄':'안 씀'))+kv('결정까지',dur(s.C_sec))+kv('이동 경로',esc(s.C_path))
   };
   $('drawer').innerHTML=`<div class="dh"><div style="flex:1;min-width:0"><h2 id="d-name">${esc(s.name||'(이름 없음)')}</h2><div class="cap" style="margin-top:4px">${esc(s.group||'구분 없음')} · ${date(s.startedAt)} · ${esc(s.device||'')} · 순서 ${esc(s.order||'-')}</div></div><button type="button" class="x" id="d-close" aria-label="닫기">✕</button></div>
    <div class="db">
     ${field({k:'source',l:'기록 구분',o:['실제 참여자',REHEARSAL],hint:'리허설은 판단 기준 계산에서 빠져요'})}
     ${['A','B','C'].map(T=>`<div class="tsec"><div class="th"><span class="pill dark">${T}</span><h2 style="font-size:15px">${FN[T]}</h2></div>
       <div class="kv">${auto[T]}</div>
-      ${stops(s,T).length?`<p class="cap" style="margin:0">막힘 신호: ${esc(stops(s,T).filter(x=>!x.startsWith('메모')).join(' · '))}</p>`:''}
+      <div class="kv">${kv('참여자 답변 · 고른 이유',esc(s[T+'_why']))}${kv('참여자 답변 · 도움될 상황',esc(s[T+'_benefit']))}${kv('참여자 답변 · 막힌 점',esc(s[T+'_stuck']))}${T==='B'?kv('참여자 답변 · 예산 입력',esc(s.B_burden)):T==='C'?kv('선택 근거 (자동)',esc(cBasisAuto(s))):''}</div>
+      ${stops(s,T).length?`<p class="cap" style="margin:0">막힘 신호: ${esc(stops(s,T).filter(x=>!x.startsWith('답변')).join(' · '))}</p>`:''}
       ${[...TASK_FORM[T],...COMMON(T)].map(field).join('')}</div>`).join('')}
     <div class="tsec"><div class="th"><h2 style="font-size:15px">세 과제를 마친 뒤</h2></div>
-      <div class="kv">${kv('써보고 싶은 기능',esc(s.compareSel))+kv('먼저 쓸 기능',s.firstPick?`${esc(s.firstPick)} · ${FN[s.firstPick]||''}`:'')}</div>
+      <div class="kv">${kv('써보고 싶은 기능',esc(s.compareSel))+kv('먼저 쓸 기능',s.firstPick?`${esc(s.firstPick)} · ${FN[s.firstPick]||''}`:'')+kv('참여자 답변 · 먼저 쓸 이유',esc(s.firstReason))+kv('참여자 답변 · 없어도 될 기능',esc(s.giveUp))}</div>
       ${OVERALL.map(field).join('')}</div>
     <div class="save-row"><button type="button" class="btn" id="d-save">메모 저장</button><span class="cap" id="d-state"></span></div>
     <section style="gap:8px"><h2 style="font-size:15px">행동 타임라인 <span class="cap">${s.events.length}개</span></h2>
@@ -325,40 +332,45 @@ function renderDrawer(){
    </div>`;
   const db=$('drawer').querySelector('.db');if(db)db.scrollTop=top;
 }
-function detail(e){const d=e.d||{};
+function detail(e){const d=e.d||{};const w=v=>v===''||v===undefined?'':won(v);
   switch(e.type){
-    case 'task_end':return d.decided?'메뉴 정함':'정하지 않고 끝냄';
-    case 'recipe_open':return `${d.name||''}${VIEW[d.from]?` · ${VIEW[d.from]}에서`:''}`;
-    case 'fix_select':return `${d.recipe} · ${d.ingredient} → ${d.choice}`;
-    case 'fix_other':case 'hard_seen':return `${d.recipe||''} ${d.ingredient||''}`;
-    case 'alt_open':return `${d.from} → ${d.to}`;
-    case 'decide':return `${d.name||''}${d.detail?` · ${d.detail}`:''}${d.conds?` · 조건 ${d.conds}`:''}${d.spent!==undefined&&d.spent!==''?` · 지출 ${won(d.spent)}`:''}${d.remaining!==undefined&&d.remaining!==''?` · 남은 ${won(d.remaining)}`:''}`;
-    case 'cook_start':case 'cook_done':return d.name||'';
-    case 'cook_step':case 'cook_exit':case 'help_open':return `${d.step}단계`;
-    case 'help':return `${d.q} (${d.step}단계)`;
-    case 'budget_edit':return `${d.field} ${d.field==='예산'?won(d.value):d.value+'일'}`;
-    case 'budget_set':return `${d.days}일 · ${won(d.budget)}${d.edited?' · 수정함':' · 기본값'}`;
-    case 'pick':case 'unpick':return `${d.name} · ${won(d.cost)}${d.remaining!==''&&d.remaining!==undefined?` · 남은 ${won(d.remaining)}`:''}`;
-    case 'opt_toggle':return `${d.name} ${d.on?'켬':'끔'}`;
-    case 'over_budget':return `${d.name} · ${won(d.remaining)}`;
-    case 'cond_toggle':return `${d.cond} ${d.on?'켬':'끔'}`;
-    case 'item_add':return d.name||'';
-    case 'add_close':return `${d.added||0}개 넣음`;
-    case 'item_open':return d.name||'';
-    case 'item_edit':return `${d.name} ${d.field}`;
-    case 'item_status':return d.status||'';
-    case 'swipe':return `${d.name||''} ${d.dir||''}`;
-    case 'back':return VIEW[d.from]?`${VIEW[d.from]}에서`:'';
+    case 'task_end':return d.decided?'정하고 마침':'정하지 않고 끝냄';
+    case 'screen':return d.label||d.name||'';
+    case 'guide':return d.step||'';
+    case 'recipe_open':return d.name||'';
+    case 'sub_open':return `${d.recipe} · ${d.ing}`;
+    case 'sub_choice':return `${d.ing} → ${d.choice}${KIND[d.kind]?` (${KIND[d.kind]})`:''}`;
+    case 'cook_start':return `${d.name}${d.detail?` · ${d.detail}`:''}`;
+    case 'decide':return [d.how,d.name,d.detail,d.time?`${d.time}분`:'',d.wash?`설거지 ${d.wash}`:'',d.low?`간단하게 먹기 ${d.low}`:'',d.cart?`산 것 ${d.cart}`:'',d.spent!==undefined&&d.spent!==''?`지출 ${w(d.spent)}`:'',d.left!==undefined&&d.left!==''?`남은 ${w(d.left)}`:''].filter(Boolean).join(' · ');
+    case 'cook_done':return d.name||'';
+    case 'cook_exit':return `${d.name||''} ${d.step?d.step+'단계':''}`;
+    case 'help_open':return `${d.step}단계`;
+    case 'help':return d.q||'';
+    case 'filter_toggle':return `${d.group} · ${d.k}`;
+    case 'filter_apply':return [d.low&&`간단하게 먹기 ${d.low}`,d.diet&&`다이어트 ${d.diet}`,d.ings&&`재료 ${d.ings}`].filter(Boolean).join(' · ')||'조건 없음';
+    case 'mode_save':return `${d.mode}${d.days?` · ${d.days}일`:''}${d.amount!==undefined&&d.amount!==''?` · ${w(d.amount)}`:''}${d.chips?` · ${d.chips}`:''}${d.goal?` · ${d.goal}`:''}`;
+    case 'mode_off':return d.mode||'';
+    case 'budget_edit':return `${d.field} ${d.value}`;
+    case 'recipe_search':return d.q||'';
+    case 'category':return d.k||'';
+    case 'shop_add':case 'shop_remove':return d.name||'';
+    case 'cart_toggle':return `${d.name} ${d.on?'담음':'뺌'}`;
+    case 'shop_channel':return `${d.name} · ${d.ch}`;
+    case 'shop_finish_tap':return `${d.n}개`;
+    case 'shop_done':return `${d.cart} · ${w(d.spent)}${d.left!==''&&d.left!==undefined?` · 남은 ${w(d.left)}`:''}`;
+    case 'item_status':return `${d.name} ${d.status}`;
+    case 'chat':return d.q||'';
     case 'start':return d.group||'';
-    case 'exclude':return d.v||'없음';
+    case 'exclude':case 'exclude_in_app':return d.v||'없음';
     case 'compare_toggle':return `${d.fn} ${d.on?'선택':'해제'}`;
     case 'compare_first':return d.fn||'해제';
     case 'compare_done':return `써보고 싶음 ${d.sel||'-'} · 먼저 ${d.first||'-'}`;
-    case 'tester_action':return d.what||'';
-    case 'undo':return d.msg||'';
+    case 'survey_answer':return `${d.why||''}${d.burden?` · 예산 입력 ${d.burden}`:''}`;
+    case 'survey_final':return `없어도 됨 ${d.giveUp||'-'}`;
     default:return '';
   }
 }
+
 
 /* ---------- events ---------- */
 $('rows').addEventListener('click',e=>{const tr=e.target.closest('tr[data-sid]');if(tr)openDrawer(tr.dataset.sid)});
@@ -393,13 +405,13 @@ $('csv').addEventListener('click',()=>{
   if(!ALL.length){toast('내려받을 기록이 없어요');return}
   const N=k=>s=>s.notes[k];
   const cols=[['참여자','name'],['구분','group'],['기록 구분',s=>s.notes.source||'실제 참여자'],['테스트 시작','startedAt'],['기기','device'],['과제 순서','order'],
-    ['A 상태','A_status'],['A 결정 메뉴','A_menu'],['A 없는 재료 처리','A_fixes'],['A 결정까지(초)','A_sec'],['A 다른 메뉴 보기','A_otherMenu'],['A 대체 어려운 메뉴 봄','A_hardSeen'],['A 기준 충족',s=>aOk(s)?'예':'아니오'],['A 도움',N('A_help')],['A 효용 설명',N('A_benefit')],['A 선택 이유',N('A_why')],['A 막힌 이유',N('A_stop')],
-    ['B 상태','B_status'],['B 예산 설정','B_mode'],['B 남은 날','B_days'],['B 예산','B_budget'],['B 기본값 수정','B_edited'],['B 고른 저녁','B_picks'],['B 지출','B_spent'],['B 남은 예산','B_remaining'],['B 결정까지(초)','B_sec'],['B 기준 충족',s=>bOk(s)?'예':'아니오'],['B 도움',N('B_help')],['B 입력 부담',N('B_burden')],['B 효용 설명',N('B_benefit')],['B 선택 이유',N('B_why')],['B 막힌 이유',N('B_stop')],
-    ['C 상태','C_status'],['C 결정 메뉴','C_menu'],['C 결정 시 조건','C_conds'],['C 조건 변경','C_condChanges'],['C 결정까지(초)','C_sec'],['C 선택 근거',N('C_basis')],['C 도움',N('C_help')],['C 효용 설명',N('C_benefit')],['C 선택 이유',N('C_why')],['C 막힌 이유',N('C_stop')],
-    ['써보고 싶은 기능','compareSel'],['먼저 쓸 기능','firstPick'],['1순위 이유',N('firstReason')],['포기한 기능',N('giveUp')],['메모',N('memo')]];
+    ['A 상태','A_status'],['A 결정 메뉴','A_menu'],['A 없는 재료 처리','A_choice'],['A 처리 방식',s=>KIND[s.A_choiceKind]||''],['A 결정까지(초)','A_sec'],['A 대체 시트 열기','A_subOpened'],['A 사서 넣기','A_buyAdded'],['A 이동 경로','A_path'],['A 기준 충족',s=>aOk(s)?'예':'아니오'],['A 도움',N('A_help')],['A 고른 이유(답변)','A_why'],['A 도움될 상황(답변)','A_benefit'],['A 막힌 점(답변)','A_stuck'],['A 효용 판단',N('A_benefit')],
+    ['B 상태','B_status'],['B 예산 화면 열기','B_budgetOpened'],['B 예산 설정','B_budgetSet'],['B 기간(일)','B_days'],['B 예산','B_amount'],['B 예산 입력 수정','B_budgetEdits'],['B 정한 것','B_how'],['B 메뉴','B_menu'],['B 산 것','B_cart'],['B 지출','B_spent'],['B 남은 예산','B_left'],['B 장보기 추가','B_shopAdds'],['B 결정까지(초)','B_sec'],['B 이동 경로','B_path'],['B 기준 충족',s=>bOk(s)?'예':'아니오'],['B 도움',N('B_help')],['B 예산 입력(답변)','B_burden'],['B 고른 이유(답변)','B_why'],['B 도움될 상황(답변)','B_benefit'],['B 막힌 점(답변)','B_stuck'],['B 효용 판단',N('B_benefit')],
+    ['C 상태','C_status'],['C 결정 메뉴','C_menu'],['C 조리 시간(분)','C_time'],['C 설거지','C_wash'],['C 필터 열기','C_filterOpened'],['C 간단하게 먹기 사용','C_lowUsed'],['C 고른 조건','C_lowChips'],['C 결정까지(초)','C_sec'],['C 이동 경로','C_path'],['C 선택 근거',s=>s.notes.C_basis||cBasisAuto(s)],['C 도움',N('C_help')],['C 고른 이유(답변)','C_why'],['C 도움될 상황(답변)','C_benefit'],['C 막힌 점(답변)','C_stuck'],['C 효용 판단',N('C_benefit')],
+    ['써보고 싶은 기능','compareSel'],['먼저 쓸 기능','firstPick'],['먼저 쓸 이유(답변)','firstReason'],['없어도 될 기능(답변)','giveUp'],['설문 완료','surveyDone'],['진행자 메모',N('memo')]];
   const cell=v=>{v=String(v??'');if(/^[=+\-@]/.test(v))v="'"+v;return /[",\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v};
   const csv='﻿'+[cols.map(c=>c[0]).join(','),...ALL.map(s=>cols.map(([,k])=>cell(typeof k==='function'?k(s):s[k])).join(','))].join('\n');
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=`냉장고노트_ABC실험_${new Date().toISOString().slice(0,10)}.csv`;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=`키친레터_ABC실험_${new Date().toISOString().slice(0,10)}.csv`;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
 });
 $('key').value=KEY;
 load();
